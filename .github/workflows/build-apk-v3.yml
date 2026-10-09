@@ -1,0 +1,49 @@
+
+name: Gerar APK Km Justo 3.0
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'KmJusto-3.0-com-bolha.zip'
+      - '.github/workflows/build-apk-v3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar repositorio
+        uses: actions/checkout@v4
+
+      - name: Extrair projeto
+        run: |
+          test -s KmJusto-3.0-com-bolha.zip
+          mkdir -p /tmp/kmjusto3
+          unzip -q KmJusto-3.0-com-bolha.zip -d /tmp/kmjusto3
+          test -s /tmp/kmjusto3/kmjusto/app/build.gradle
+          cp -a /tmp/kmjusto3/kmjusto/. .
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Compilar APK
+        run: gradle :app:assembleDebug --no-daemon
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KmJusto-3.0-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
